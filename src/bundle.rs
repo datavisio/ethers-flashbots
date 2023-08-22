@@ -1,3 +1,4 @@
+use std::cmp::min;
 use crate::utils::{deserialize_optional_h160, deserialize_u256, deserialize_u64};
 use chrono::{DateTime, Utc};
 use ethers::core::{
@@ -76,6 +77,18 @@ pub struct BundleRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "baseFee")]
     simulation_basefee: Option<u64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "refundPercent")]
+    refund_percent: Option<u8>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "refundIndex")]
+    refund_index: Option<u8>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "refundRecipient")]
+    refund_recipient: Option<Address>,
 }
 
 pub fn serialize_txs<S>(txs: &[BundleTransaction], s: S) -> Result<S::Ok, S::Error>
@@ -253,6 +266,41 @@ impl BundleRequest {
     /// in seconds since the UNIX epoch.
     pub fn set_max_timestamp(mut self, timestamp: u64) -> Self {
         self.max_timestamp = Some(timestamp);
+        self
+    }
+
+    /// Get ETH reward percentage (if any)
+    pub fn refund_percent(&self) -> Option<u8> {
+        self.refund_percent
+    }
+
+    /// Set percentage (from 0 to 99) of the ETH reward of the last transaction, or the transaction specified by refund_index
+    /// Percentage above 99 will be limited to 99
+    pub fn set_refund_percent(mut self, percent: u8) -> Self {
+        self.refund_percent = Some(min(percent, 99));
+        self
+    }
+
+    /// Get index of the transaction of which the ETH reward should be refunded (if any)
+    pub fn refund_index(&self) -> Option<u8> {
+        self.refund_index
+    }
+
+    /// Set the index of the transaction of which the ETH reward should be refunded
+    pub fn set_refund_index(mut self, index: u8) -> Self {
+        self.refund_index = Some(index);
+        self
+    }
+
+    /// Get the address that will receive the ETH refund (if any),
+    /// default: sender of the first transaction in the bundle
+    pub fn refund_recipient(&self) -> Option<Address> {
+        self.refund_recipient
+    }
+
+    /// Set the address that will receive the ETH refund
+    pub fn set_refund_recipient(mut self, recipient: Address) -> Self {
+        self.refund_recipient = Some(recipient);
         self
     }
 }
