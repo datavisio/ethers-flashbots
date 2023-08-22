@@ -491,6 +491,27 @@ mod tests {
     }
 
     #[test]
+    fn bundle_serialize_with_refund() {
+        let bundle = BundleRequest::new()
+            .push_transaction(Bytes::from(vec![0x1]))
+            .push_revertible_transaction(Bytes::from(vec![0x2]))
+            .set_block(2.into())
+            .set_min_timestamp(1000)
+            .set_max_timestamp(2000)
+            .set_simulation_timestamp(1000)
+            .set_simulation_block(1.into())
+            .set_simulation_basefee(333333)
+            .set_refund_percent(99)
+            .set_refund_index(1)
+            .set_refund_recipient(Address::zero());
+
+        assert_eq!(
+            &serde_json::to_string(&bundle).unwrap(),
+            r#"{"txs":["0x01","0x02"],"revertingTxHashes":["0xf2ee15ea639b73fa3db9b34a245bdfa015c260c598b211bf05a1ecc4b3e3b4f2"],"blockNumber":"0x2","minTimestamp":1000,"maxTimestamp":2000,"stateBlockNumber":"0x1","timestamp":1000,"baseFee":333333,"refundPercent":99,"refundIndex":1,"refundRecipient":"0x0000000000000000000000000000000000000000"}"#
+        );
+    }
+
+    #[test]
     fn simulated_bundle_deserialize() {
         let simulated_bundle: SimulatedBundle = serde_json::from_str(
             r#"{
